@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataHub ВУЗ-ов РК - Каталог университетов Казахстана</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #003366;
+            --secondary-color: #e53935;
+            --accent-color: #ff9900;
+            --light-color: #f5f5f5;
+            --dark-color: #333;
+            --success-color: #4CAF50;
+            --ai-color: #6a11cb;
+            --text-color: #333;
+            --text-light: #666;
+            --font-size-normal: 16px;
+            --font-size-large: 18px;
+            --font-size-xlarge: 24px;
+        }
+
+        /* Стили для доступности */
+        .accessibility-panel {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 15px;
+            width: 250px;
+            display: none;
+        }
+
+        .accessibility-panel.active {
+            display: block;
+        }
+
+        .accessibility-btn {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            z-index: 1001;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* Стили для AI чата */
+        .ai-chat-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1001;
+            background: linear-gradient(135deg, var(--ai-color), #2575fc);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 6px 15px rgba(106, 17, 203, 0.4);
+        }
+
+        .ai-chat-panel {
+            position: fixed;
+            bottom: 120px;
+            right: 30px;
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .ai-chat-panel.active {
+            display: flex;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, var(--ai-color), #2575fc);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 18px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.ai {
+            background: #f0f2f5;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+
+        .message.user {
+            background: linear-gradient(135deg, var(--ai-color), #2575fc);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+        }
+
+        .chat-input button {
+            background: linear-gradient(135deg, var(--ai-color), #2575fc);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* AI генерация данных */
+        .ai-generate-btn {
+            background: linear-gradient(135deg, var(--ai-color), #2575fc);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 20px auto;
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+
+        .ai-generate-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .ai-loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .ai-loading.active {
+            display: block;
+        }
+
+        .ai-loading i {
+            font-size: 2rem;
+            color: var(--ai-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .high-contrast {
+            background-color: #000 !important;
+            color: #fff !important;
+            border-color: #fff !important;
+        }
+
+        .high-contrast-text {
+            color: #fff !important;
+        }
+
+        .text-large {
+            font-size: 1.3em !important;
+        }
+
+        .text-xlarge {
+            font-size: 1.6em !important;
+        }
+
+        .reader-mode {
+            line-height: 1.8 !important;
+            letter-spacing: 0.5px !important;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: var(--text-color);
+            font-size: var(--font-size-normal);
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo img {
+            height: 60px;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .logo span {
+            color: var(--accent-color);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .search-box {
+            display: flex;
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .search-box input {
+            border: none;
+            padding: 8px 12px;
+            width: 250px;
+        }
+
+        .search-box button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+
+        .lang-switcher button {
+            background: transparent;
+            border: 1px solid white;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        nav {
+            background-color: #002244;
+            padding: 10px 0;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            justify-content: space-between;
+        }
+
+        .nav-menu li {
+            position: relative;
+        }
+
+        .nav-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            display: block;
+            font-weight: 500;
+            border-radius: 4px;
+        }
+
+        .nav-menu a:hover, .nav-menu a.active {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .dropdown {
+            position: absolute;
+            background: white;
+            color: var(--dark-color);
+            min-width: 200px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+            z-index: 100;
+            border-radius: 4px;
+        }
+
+        .dropdown li a {
+            color: var(--dark-color);
+        }
+
+        .dropdown li a:hover {
+            background-color: var(--light-color);
+        }
+
+        .nav-menu li:hover .dropdown {
+            display: block;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        /* Hero section */
+        .hero {
+            background: linear-gradient(rgba(0,51,102,0.8), rgba(0,51,102,0.9)), url('https://images.unsplash.com/photo-1523050854058-8df90110c9f1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 800px;
+            margin: 0 auto 30px;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: var(--accent-color);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 5px;
+        }
+
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid white;
+        }
+
+        /* Main sections */
+        section {
+            padding: 60px 0;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 40px;
+            color: var(--primary-color);
+            font-size: 2rem;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background: var(--accent-color);
+        }
+
+        /* University catalog */
+        .catalog-filters {
+            background: var(--light-color);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .filter-group label {
+            font-weight: 500;
+            margin-right: 5px;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .universities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .university-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            position: relative;
+        }
+
+        .university-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .university-img {
+            height: 180px;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+        }
+
+        .university-info {
+            padding: 20px;
+        }
+
+        .university-info h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .university-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .compare-checkbox {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .compare-checkbox input {
+            margin-right: 8px;
+        }
+
+        /* Features */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 30px 20px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        /* 3D Tour */
+        .tour-container {
+            background: var(--light-color);
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .tour-placeholder {
+            background: #ddd;
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .tour-placeholder i {
+            font-size: 5rem;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        /* Comparison tool */
+        .comparison-tool {
+            background: var(--light-color);
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .comparison-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .comparison-table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* AI Features */
+        .ai-features {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 40px 0;
+            text-align: center;
+        }
+
+        .ai-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .ai-feature-card {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .ai-feature-icon {
+            font-size: 3rem;
+            color: var(--ai-color);
+            margin-bottom: 20px;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary-color);
+            color: white;
+            padding: 50px 0 20px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-column h3 {
+            margin-bottom: 20px;
+            color: var(--accent-color);
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-column a {
+            color: #ddd;
+            text-decoration: none;
+        }
+
+        .footer-column a:hover {
+            color: white;
+            text-decoration: underline;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .nav-menu {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                width: 100%;
+                background: var(--primary-color);
+                z-index: 100;
+            }
+            
+            .nav-menu.active {
+                display: flex;
+            }
+            
+            .mobile-menu-btn {
+                display: block;
+            }
+            
+            .header-top {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .search-box input {
+                width: 200px;
+            }
+            
+            .hero h2 {
+                font-size: 2rem;
+            }
+            
+            .ai-chat-panel {
+                width: 350px;
+                height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .universities-grid, .features-grid, .ai-feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-group {
+                flex-direction: column;
+            }
+            
+            .comparison-controls {
+                flex-direction: column;
+            }
+            
+            .ai-chat-panel {
+                width: 100%;
+                height: 100vh;
+                bottom: 0;
+                right: 0;
+                border-radius: 0;
+            }
+            
+            .ai-chat-btn {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        /* Skip to content link for accessibility */
+        .skip-to-content {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--secondary-color);
+            color: white;
+            padding: 8px;
+            z-index: 1001;
+            text-decoration: none;
+        }
+
+        .skip-to-content:focus {
+            top: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Кнопка пропуска к контенту для доступности -->
+    <a href="#main-content" class="skip-to-content">Перейти к основному контенту</a>
+    
+    <!-- Кнопка доступности -->
+    <button class="accessibility-btn" id="accessibilityToggle" aria-label="Открыть панель доступности">
+        <i class="fas fa-universal-access"></i>
+    </button>
+    
+    <!-- AI Чат-бот -->
+    <button class="ai-chat-btn" id="aiChatToggle" aria-label="Открыть чат с ИИ">
+        <i class="fas fa-robot"></i>
+    </button>
+    
+    <div class="ai-chat-panel" id="aiChatPanel">
+        <div class="chat-header">
+            <h3><i class="fas fa-robot"></i> AI Помощник</h3>
+            <button id="closeChat" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+                Здравствуйте! Я AI помощник DataHub. Чем могу помочь? Задавайте вопросы о вузах, поступлении, программах или сравнении университетов.
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="Введите ваш вопрос..." aria-label="Поле ввода для чата">
+            <button id="sendMessage"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    
+    <!-- Панель доступности -->
+    <div class="accessibility-panel" id="accessibilityPanel">
+        <h3>Настройки доступности</h3>
+        <div class="accessibility-option">
+            <button id="highContrastToggle" class="accessibility-btn-small">Высокая контрастность</button>
+        </div>
+        <div class="accessibility-option">
+            <button id="textSizeIncrease" class="accessibility-btn-small">Увеличить текст</button>
+        </div>
+        <div class="accessibility-option">
+            <button id="textSizeDecrease" class="accessibility-btn-small">Уменьшить текст</button>
+        </div>
+        <div class="accessibility-option">
+            <button id="readerModeToggle" class="accessibility-btn-small">Режим для чтения</button>
+        </div>
+        <div class="accessibility-option">
+            <button id="speakContent" class="accessibility-btn-small">Озвучить текст</button>
+        </div>
+        <div class="accessibility-option">
+            <button id="resetAccessibility" class="accessibility-btn-small">Сбросить настройки</button>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <i class="fas fa-university" style="font-size: 2.5rem;"></i>
+                    <div>
+                        <h1>DataHub <span>ВУЗ-ов РК</span></h1>
+                        <p>Общий каталог университетов Казахстана</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="search-box">
+                        <input type="text" placeholder="Поиск университета..." id="searchInput">
+                        <button aria-label="Поиск"><i class="fas fa-search"></i></button>
+                    </div>
+                    <div class="lang-switcher">
+                        <button>РУС</button>
+                        <button>ҚАЗ</button>
+                        <button>ENG</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="mobile-menu-btn" id="mobileMenuToggle" aria-label="Открыть меню">
+                <i class="fas fa-bars"></i>
+            </button>
+            
+            <nav>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="#home" class="active">Главная</a></li>
+                    <li><a href="#about">Об университете</a></li>
+                    <li>
+                        <a href="#programs">Академические программы</a>
+                        <ul class="dropdown">
+                            <li><a href="#bachelor">Бакалавриат</a></li>
+                            <li><a href="#master">Магистратура</a></li>
+                            <li><a href="#phd">Докторантура</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#admission">Приём и поступление</a></li>
+                    <li><a href="#3d-tour">3D-тур</a></li>
+                    <li><a href="#international">Международное сотрудничество</a></li>
+                    <li><a href="#comparison">Сравнение вузов</a></li>
+                    <li><a href="#ai-features">AI Возможности</a></li>
+                    <li><a href="#contact">Контакты</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <h2>Каталог университетов Казахстана с AI помощником</h2>
+            <p>DataHub ВУЗ-ов РК предоставляет полную информацию о высших учебных заведениях Казахстана с использованием искусственного интеллекта для анализа данных и персонализированных рекомендаций.</p>
+            <div>
+                <a href="#catalog" class="cta-button">Найти университет</a>
+                <a href="#ai-features" class="cta-button secondary">AI Возможности</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- University Catalog -->
+        <section id="catalog">
+            <div class="container">
+                <h2 class="section-title">Каталог университетов</h2>
+                
+                <div class="ai-loading" id="aiLoading">
+                    <i class="fas fa-spinner"></i>
+                    <p>AI анализирует данные и заполняет каталог...</p>
+                </div>
+                
+                <button class="ai-generate-btn" id="aiGenerateData">
+                    <i class="fas fa-magic"></i> Сгенерировать данные с помощью AI
+                </button>
+                
+                <div class="catalog-filters">
+                    <div class="filter-group">
+                        <div>
+                            <label for="regionFilter">Регион:</label>
+                            <select id="regionFilter">
+                                <option value="all">Все регионы</option>
+                                <option value="nur-sultan">Нур-Султан</option>
+                                <option value="almaty">Алматы</option>
+                                <option value="shymkent">Шымкент</option>
+                                <option value="karaganda">Караганда</option>
+                                <option value="abai">Абайская область</option>
+                                <option value="aktobe">Актюбинская область</option>
+                                <option value="almaty-region">Алматинская область</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="typeFilter">Тип вуза:</label>
+                            <select id="typeFilter">
+                                <option value="all">Все типы</option>
+                                <option value="national">Национальный</option>
+                                <option value="state">Государственный</option>
+                                <option value="private">Частный</option>
+                                <option value="international">Международный</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="programFilter">Программа:</label>
+                            <select id="programFilter">
+                                <option value="all">Все программы</option>
+                                <option value="technical">Технические</option>
+                                <option value="medical">Медицинские</option>
+                                <option value="humanities">Гуманитарные</option>
+                                <option value="economic">Экономические</option>
+                                <option value="pedagogical">Педагогические</option>
+                                <option value="agricultural">Сельскохозяйственные</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <div>
+                            <label for="searchFilter">Название:</label>
+                            <input type="text" id="searchFilter" placeholder="Введите название вуза">
+                        </div>
+                        <div>
+                            <label for="aiRecommendation">AI рекомендация:</label>
+                            <button id="aiRecommendBtn" style="padding: 8px 15px; background: var(--ai-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                <i class="fas fa-brain"></i> Получить рекомендацию
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="universities-grid" id="universitiesGrid">
+                    <!-- University cards will be generated here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Features Section -->
+        <section id="ai-features" class="ai-features">
+            <div class="container">
+                <h2 class="section-title">AI Возможности DataHub</h2>
+                <p>Используйте искусственный интеллект для получения персонализированных рекомендаций, анализа данных и автоматического заполнения информации</p>
+                
+                <div class="ai-feature-grid">
+                    <div class="ai-feature-card">
+                        <div class="ai-feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <h3>AI Генерация данных</h3>
+                        <p>Автоматическое заполнение каталога университетов с актуальной информацией о программах, рейтингах и требованиях</p>
+                    </div>
+                    <div class="ai-feature-card">
+                        <div class="ai-feature-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h3>Умный чат-бот</h3>
+                        <p>24/7 поддержка по вопросам поступления, программ и сравнения университетов с помощью AI-ассистента</p>
+                    </div>
+                    <div class="ai-feature-card">
+                        <div class="ai-feature-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3>Анализ и прогнозы</h3>
+                        <p>AI анализ тенденций в образовании, прогнозирование рейтингов и рекомендации по выбору специальности</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- About University -->
+        <section id="about" style="background-color: #f9f9f9;">
+            <div class="container">
+                <h2 class="section-title">Об университете</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <h3>Миссия и видение</h3>
+                        <p id="missionText">Нажмите кнопку AI ниже для генерации информации</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIMission()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h3>История</h3>
+                        <p id="historyText">AI может сгенерировать историческую справку университета</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIHistory()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <h3>Лидерство</h3>
+                        <p id="leadershipText">Информация о руководстве будет сгенерирована AI</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAILeadership()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h3>Достижения</h3>
+                        <p id="achievementsText">AI найдет и представит ключевые достижения</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIAchievements()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Academic Programs -->
+        <section id="programs">
+            <div class="container">
+                <h2 class="section-title">Академические программы</h2>
+                <button class="ai-generate-btn" id="aiGeneratePrograms">
+                    <i class="fas fa-graduation-cap"></i> AI Анализ программ университетов
+                </button>
+                <div class="features-grid" id="programsGrid">
+                    <div class="feature-card">
+                        <h3>Бакалавриат</h3>
+                        <p>Программы бакалавриата по различным специальностям с указанием сроков обучения и требований.</p>
+                        <div id="bachelorPrograms"></div>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Магистратура</h3>
+                        <p>Магистерские программы для углубленного изучения специальностей и научно-исследовательской работы.</p>
+                        <div id="masterPrograms"></div>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Докторантура</h3>
+                        <p>Программы PhD для подготовки научных кадров высшей квалификации и проведения исследований.</p>
+                        <div id="phdPrograms"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admission -->
+        <section id="admission" style="background-color: #f9f9f9;">
+            <div class="container">
+                <h2 class="section-title">Приём и поступление</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Требования</h3>
+                        <p id="requirementsText">AI проанализирует и сгенерирует актуальные требования для поступления</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIRequirements()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Сроки подачи</h3>
+                        <p id="deadlinesText">AI соберет информацию о дедлайнах подачи документов</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIDeadlines()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Стипендии</h3>
+                        <p id="scholarshipsText">AI найдет информацию о стипендиях и грантах</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIScholarships()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Общежитие</h3>
+                        <p id="dormitoryText">AI предоставит данные о студенческих общежитиях</p>
+                        <button class="ai-generate-btn" style="padding: 8px 15px; margin-top: 10px;" onclick="generateAIDormitory()">
+                            <i class="fas fa-magic"></i> Сгенерировать с AI
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3D Tour -->
+        <section id="3d-tour">
+            <div class="container">
+                <h2 class="section-title">3D-тур по кампусу</h2>
+                <div class="tour-container">
+                    <div class="tour-placeholder">
+                        <i class="fas fa-university"></i>
+                        <h3>Виртуальный тур по университетскому кампусу</h3>
+                        <p>Исследуйте аудитории, лаборатории, библиотеки и общежития в 3D-формате с AI-гидом</p>
+                    </div>
+                    <p>3D-тур позволяет дистанционно ознакомиться с инфраструктурой университета, совершить виртуальную прогулку по территории кампуса и осмотреть учебные корпуса изнутри.</p>
+                    <button class="ai-generate-btn" onclick="startAIGuidedTour()">
+                        <i class="fas fa-robot"></i> Запустить AI-экскурсию
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- International Cooperation -->
+        <section id="international" style="background-color: #f9f9f9;">
+            <div class="container">
+                <h2 class="section-title">Международное сотрудничество</h2>
+                <button class="ai-generate-btn" id="aiGenerateInternational">
+                    <i class="fas fa-globe"></i> AI Анализ международных связей
+                </button>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Программы обмена</h3>
+                        <p id="exchangeText">AI найдет программы международного обмена</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Партнёрские университеты</h3>
+                        <p id="partnersText">AI определит ключевых международных партнеров</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Для иностранных студентов</h3>
+                        <p id="foreignStudentsText">AI подготовит информацию для иностранных абитуриентов</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Двойные дипломы</h3>
+                        <p id="doubleDiplomasText">AI найдет программы двойных дипломов</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Tool -->
+        <section id="comparison">
+            <div class="container">
+                <h2 class="section-title">Сравнение вузов и программ</h2>
+                <div class="comparison-tool">
+                    <p>Выберите до 3 университетов для сравнения их основных характеристик и академических программ.</p>
+                    
+                    <div class="comparison-controls">
+                        <select id="compareSelect1">
+                            <option value="">Выберите первый университет</option>
+                        </select>
+                        <select id="compareSelect2">
+                            <option value="">Выберите второй университет</option>
+                        </select>
+                        <select id="compareSelect3">
+                            <option value="">Выберите третий университет</option>
+                        </select>
+                        <button id="aiCompareButton" class="ai-generate-btn">
+                            <i class="fas fa-robot"></i> AI Сравнение
+                        </button>
+                    </div>
+                    
+                    <div class="comparison-table">
+                        <table id="comparisonTable">
+                            <thead>
+                                <tr>
+                                    <th>Параметр</th>
+                                    <th id="uni1Header">Университет 1</th>
+                                    <th id="uni2Header">Университет 2</th>
+                                    <th id="uni3Header">Университет 3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Comparison data will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer id="contact">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>DataHub ВУЗ-ов РК</h3>
+                    <p>Официальный каталог университетов Казахстана с AI-аналитикой и персонализированными рекомендациями.</p>
+                    <p><i class="fas fa-robot"></i> AI-помощник доступен 24/7</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Контакты</h3>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> г. Нур-Султан, ул. Керей, Жанибек хандар 8</li>
+                        <li><i class="fas fa-phone"></i> +7 (7172) 123-456</li>
+                        <li><i class="fas fa-envelope"></i> info@datahub-kz.edu</li>
+                        <li><i class="fas fa-robot"></i> AI-поддержка: support@datahub-kz.ai</li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Быстрые ссылки</h3>
+                    <ul>
+                        <li><a href="#about">Об университете</a></li>
+                        <li><a href="#programs">Академические программы</a></li>
+                        <li><a href="#admission">Поступление</a></li>
+                        <li><a href="#3d-tour">3D-тур</a></li>
+                        <li><a href="#comparison">Сравнение вузов</a></li>
+                        <li><a href="#ai-features">AI Возможности</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>AI Поддержка</h3>
+                    <ul>
+                        <li><button onclick="toggleAIChat()" style="background: none; border: none; color: #ddd; cursor: pointer; text-align: left; font-size: 16px;"><i class="fas fa-robot"></i> Открыть AI чат</button></li>
+                        <li><button onclick="generateAIReport()" style="background: none; border: none; color: #ddd; cursor: pointer; text-align: left; font-size: 16px;"><i class="fas fa-chart-bar"></i> AI Отчет</button></li>
+                        <li><button onclick="askAIMatching()" style="background: none; border: none; color: #ddd; cursor: pointer; text-align: left; font-size: 16px;"><i class="fas fa-user-graduate"></i> AI Подбор вуза</button></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p>&copy; 2023 DataHub ВУЗ-ов РК. Все права защищены.</p>
+                <p>Сайт разработан с учётом потребностей людей с ограниченными возможностями и интегрирован с AI-технологиями.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Основные данные университетов (будет дополнено AI)
+        let universities = [
+            {
+                id: 1,
+                name: "Назарбаев Университет",
+                location: "Нур-Султан",
+                type: "national",
+                programs: ["technical", "medical", "humanities", "economic"],
+                established: 2010,
+                students: 6000,
+                rating: 9.8,
+                description: "Ведущий исследовательский университет Казахстана",
+                aiGenerated: false
+            },
+            {
+                id: 2,
+                name: "КазНУ им. аль-Фараби",
+                location: "Алматы",
+                type: "national",
+                programs: ["technical", "humanities", "economic", "pedagogical"],
+                established: 1934,
+                students: 20000,
+                rating: 9.2,
+                description: "Крупнейший классический университет Казахстана",
+                aiGenerated: false
+            }
+        ];
+
+        // AI Генерация данных университетов
+        async function generateUniversityDataWithAI() {
+            const loading = document.getElementById('aiLoading');
+            loading.classList.add('active');
+            
+            try {
+                // Имитация AI-запроса к API
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Генерируем дополнительные данные с помощью AI
+                const aiGeneratedUniversities = [
+                    {
+                        id: 3,
+                        name: "Евразийский национальный университет им. Л.Н. Гумилева",
+                        location: "Нур-Султан",
+                        type: "national",
+                        programs: ["technical", "humanities", "economic", "pedagogical"],
+                        established: 1996,
+                        students: 18000,
+                        rating: 9.0,
+                        description: "Ведущий вуз в области технических и гуманитарных наук с сильной исследовательской базой",
+                        aiGenerated: true
+                    },
+                    {
+                        id: 4,
+                        name: "Казахский национальный исследовательский технический университет им. К.И. Сатпаева",
+                        location: "Алматы",
+                        type: "national",
+                        programs: ["technical", "economic"],
+                        established: 1934,
+                        students: 15000,
+                        rating: 8.9,
+                        description: "Ведущий технический университет Казахстана с международной аккредитацией",
+                        aiGenerated: true
+                    },
+                    {
+                        id: 5,
+                        name: "Казахский национальный медицинский университет им. С.Д. Асфендиярова",
+                        location: "Алматы",
+                        type: "state",
+                        programs: ["medical"],
+                        established: 1931,
+                        students: 12000,
+                        rating: 9.1,
+                        description: "Ведущий медицинский вуз страны с современными клиническими базами",
+                        aiGenerated: true
+                    },
+                    {
+                        id: 6,
+                        name: "Казахский национальный педагогический университет им. Абая",
+                        location: "Алматы",
+                        type: "national",
+                        programs: ["pedagogical", "humanities"],
+                        established: 1928,
+                        students: 14000,
+                        rating: 8.7,
+                        description: "Ведущий педагогический университет с богатыми традициями подготовки учителей",
+                        aiGenerated: true
+                    },
+                    {
+                        id: 7,
+                        name: "Университет Международного Бизнеса",
+                        location: "Алматы",
+                        type: "private",
+                        programs: ["economic", "humanities"],
+                        established: 1992,
+                        students: 5000,
+                        rating: 8.5,
+                        description: "Частный университет с международной аккредитацией и программами на английском языке",
+                        aiGenerated: true
+                    },
+                    {
+                        id: 8,
+                        name: "Казахский агротехнический университет им. С. Сейфуллина",
+                        location: "Нур-Султан",
+                        type: "state",
+                        programs: ["agricultural", "technical"],
+                        established: 1957,
+                        students: 10000,
+                        rating: 8.3,
+                        description: "Ведущий аграрный университет с современными исследовательскими лабораториями",
+                        aiGenerated: true
+                    }
+                ];
+                
+                // Добавляем сгенерированные университеты
+                universities = [...universities, ...aiGeneratedUniversities];
+                
+                // Обновляем отображение
+                generateUniversityCards();
+                updateComparisonSelects();
+                
+                // Показываем уведомление
+                showAINotification('Данные успешно сгенерированы с помощью AI! Добавлено 6 новых университетов.');
+                
+            } catch (error) {
+                console.error('Ошибка генерации данных:', error);
+                showAINotification('Ошибка при генерации данных. Используются стандартные данные.', true);
+            } finally {
+                loading.classList.remove('active');
+            }
+        }
+
+        // AI чат-бот
+        async function handleAIChat(message) {
+            // Имитация ответа AI
+            const responses = {
+                'привет': 'Здравствуйте! Я AI помощник DataHub. Чем могу помочь?',
+                'поступление': 'Для поступления вам понадобятся: аттестат, результаты ЕНТ/КТА, медицинская справка. Сроки подачи документов обычно с 20 июня по 20 августа.',
+                'программы': 'Университеты предлагают программы бакалавриата (4 года), магистратуры (2 года) и докторантуры (3 года). Есть технические, медицинские, гуманитарные и экономические направления.',
+                'рейтинг': 'Топ-5 вузов по рейтингу: 1. Назарбаев Университет, 2. КазНУ им. аль-Фараби, 3. ЕНУ им. Гумилева, 4. КазНТУ им. Сатпаева, 5. КазНМУ им. Асфендиярова.',
+                'стипендия': 'Существуют государственные стипендии, стипендии Президента, университетские гранты. Средний размер стипендии 60,000-150,000 тенге в месяц.',
+                'общежитие': 'Стоимость общежития 15,000-40,000 тенге в месяц. Есть комнаты на 2-4 человека с доступом к кухне и санузлу.',
+                'международное': 'Многие вузы имеют партнерские программы с университетами Европы, США и Азии. Есть программы двойных дипломов и семестровые обмены.',
+                'сравнение': 'Для сравнения вузов перейдите в раздел "Сравнение вузов" и выберите интересующие университеты из списка.',
+                'контакты': 'Контакты DataHub: +7 (7172) 123-456, info@datahub-kz.edu. AI поддержка доступна 24/7 в этом чате.'
+            };
+            
+            const lowerMessage = message.toLowerCase();
+            let response = "Я могу помочь с информацией о поступлении, программах, рейтингах, стипендиях, общежитиях и международном сотрудничестве. Задайте конкретный вопрос!";
+            
+            for (const [key, value] of Object.entries(responses)) {
+                if (lowerMessage.includes(key)) {
+                    response = value;
+                    break;
+                }
+            }
+            
+            // Имитация задержки AI
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            return response;
+        }
+
+        // Генерация миссии университета с AI
+        async function generateAIMission() {
+            const missions = [
+                "Миссия университета - подготовка конкурентоспособных специалистов мирового уровня через интеграцию образования, науки и инноваций. Видение: стать ведущим исследовательским университетом Центральной Азии к 2030 году.",
+                "Цель университета - формирование интеллектуальной элиты нации через качественное образование и передовые научные исследования. Стратегия развития включает цифровизацию образовательного процесса и усиление международного сотрудничества.",
+                "Миссия: создание образовательной экосистемы, способствующей раскрытию потенциала каждого студента. Видение: университет как драйвер инновационного развития региона и страны."
+            ];
+            
+            const randomMission = missions[Math.floor(Math.random() * missions.length)];
+            document.getElementById('missionText').innerHTML = `<strong>AI сгенерированная миссия:</strong><br>${randomMission}`;
+            showAINotification('Миссия университета сгенерирована с помощью AI');
+        }
+
+        // Генерация истории университета с AI
+        async function generateAIHistory() {
+            const histories = [
+                "Университет основан в 1934 году как Казахский государственный университет. В 1990-х годах получил статус национального исследовательского университета. В 2010 году открыт новый кампус с современной инфраструктурой.",
+                "История вуза начинается с 1957 года как инженерно-строительного института. В 2000 году получил статус университета. Сегодня это многопрофильный вуз с 8 факультетами и 50+ кафедрами.",
+                "Основан в 1991 году как один из первых частных университетов в Казахстане. С 2005 года имеет международную аккредитацию. В 2020 году открыт инновационно-технологический парк."
+            ];
+            
+            const randomHistory = histories[Math.floor(Math.random() * histories.length)];
+            document.getElementById('historyText').innerHTML = `<strong>AI сгенерированная история:</strong><br>${randomHistory}`;
+            showAINotification('История университета сгенерирована с помощью AI');
+        }
+
+        // Генерация информации о лидерстве с AI
+        async function generateAILeadership() {
+            const leaderships = [
+                "Ректор университета - доктор наук, профессор с 20-летним опытом в образовании. В руководстве также входят проректоры по учебной, научной работе и международному сотрудничеству.",
+                "Университет возглавляет академик НАН РК с международным признанием. Административная команда включает 5 проректоров и деканов 10 факультетов.",
+                "Во главе университета стоит совет директоров и ректорат. Ректор имеет степень PhD ведущего мирового университета и опыт работы в международных образовательных проектах."
+            ];
+            
+            const randomLeadership = leaderships[Math.floor(Math.random() * leaderships.length)];
+            document.getElementById('leadershipText').innerHTML = `<strong>AI сгенерированная информация:</strong><br>${randomLeadership}`;
+            showAINotification('Информация о лидерстве сгенерирована с помощью AI');
+        }
+
+        // Генерация достижений с AI
+        async function generateAIAchievements() {
+            const achievements = [
+                "В 2022 году университет вошел в топ-500 мирового рейтинга QS. Студенты выиграли 10 международных олимпиад. Запущено 5 стартапов с коммерциализацией.",
+                "Университет получил 15 патентов за последний год. Научные публикации сотрудников цитируются в международных базах данных. Программы аккредитованы международными агентствами.",
+                "Выпускники университета занимают руководящие позиции в крупных компаниях. Университетский проект получил грант от Всемирного банка. Открыта новая лаборатория с оборудованием мирового уровня."
+            ];
+            
+            const randomAchievements = achievements[Math.floor(Math.random() * achievements.length)];
+            document.getElementById('achievementsText').innerHTML = `<strong>AI сгенерированные достижения:</strong><br>${randomAchievements}`;
+            showAINotification('Достижения университета сгенерированы с помощью AI');
+        }
+
+        // Генерация требований для поступления с AI
+        async function generateAIRequirements() {
+            const requirements = [
+                "Для поступления на бакалавриат: аттестат о среднем образовании, сертификат ЕНТ (минимум 65 баллов), медицинская справка 086-У. Для творческих специальностей - дополнительное творческое испытание.",
+                "Требования для магистратуры: диплом бакалавра, сертификат КТА по специальности (минимум 60 баллов), мотивационное письмо, рекомендации. Для докторантуры - публикации и исследовательский проект.",
+                "Иностранные абитуриенты: нострификация документов, сертификат по английскому/казахскому/русскому языку, визовая поддержка, медицинская страховка."
+            ];
+            
+            const randomRequirements = requirements[Math.floor(Math.random() * requirements.length)];
+            document.getElementById('requirementsText').innerHTML = `<strong>AI сгенерированные требования:</strong><br>${randomRequirements}`;
+            showAINotification('Требования для поступления сгенерированы с помощью AI');
+        }
+
+        // Генерация сроков подачи с AI
+        async function generateAIDeadlines() {
+            const deadlines = [
+                "Сроки подачи документов на 2024 год: с 20 июня по 20 августа для бакалавриата, с 1 июля по 15 августа для магистратуры. Вступительные экзамены проходят с 1 по 15 августа.",
+                "График приемной кампании: 20 июня - начало приема документов, 10 июля - первый поток вступительных экзаменов, 25 июля - второй поток, 20 августа - завершение приема.",
+                "Для иностранных студентов: с 1 мая по 1 июля - подача документов онлайн, с 15 по 30 июля - вступительные испытания, до 20 августа - получение приглашения и визовая процедура."
+            ];
+            
+            const randomDeadlines = deadlines[Math.floor(Math.random() * deadlines.length)];
+            document.getElementById('deadlinesText').innerHTML = `<strong>AI сгенерированные сроки:</strong><br>${randomDeadlines}`;
+            showAINotification('Сроки подачи документов сгенерированы с помощью AI');
+        }
+
+        // Генерация информации о стипендиях с AI
+        async function generateAIScholarships() {
+            const scholarships = [
+                "Государственные стипендии: 60,000 тенге/месяц для бакалавров, 80,000 тенге/месяц для магистрантов. Стипендия Президента: 150,000 тенге/месяц для отличников.",
+                "Университетские гранты: полное покрытие обучения для топ-10 абитуриентов. Стипендии от компаний-партнеров: 50,000-100,000 тенге/месяц с гарантией трудоустройства.",
+                "Международные стипендии: программа Болашак, стипендии Erasmus+, гранты от международных фондов. Социальные стипендии: для студентов из малообеспеченных семей."
+            ];
+            
+            const randomScholarships = scholarships[Math.floor(Math.random() * scholarships.length)];
+            document.getElementById('scholarshipsText').innerHTML = `<strong>AI сгенерированная информация:</strong><br>${randomScholarships}`;
+            showAINotification('Информация о стипендиях сгенерирована с помощью AI');
+        }
+
+        // Генерация информации об общежитиях с AI
+        async function generateAIDormitory() {
+            const dormitories = [
+                "Студенческий городок включает 5 корпусов общежитий. Стоимость: 20,000 тенге/месяц (комната на 3 человека), 35,000 тенге/месяц (комната на 2 человека). Включены Wi-Fi, прачечная, спортзал.",
+                "Общежития квартирного типа: 2-комнатные блоки с кухней и санузлом. Стоимость: 40,000 тенге/месяц. Инфраструктура: библиотека, компьютерный класс, столовая, медпункт.",
+                "Для иногородних студентов гарантировано место в общежитии. Стоимость зависит от условий: от 15,000 до 40,000 тенге/месяц. Заселение с 20 августа."
+            ];
+            
+            const randomDormitory = dormitories[Math.floor(Math.random() * dormitories.length)];
+            document.getElementById('dormitoryText').innerHTML = `<strong>AI сгенерированная информация:</strong><br>${randomDormitory}`;
+            showAINotification('Информация об общежитиях сгенерирована с помощью AI');
+        }
+
+        // AI экскурсия по 3D-туру
+        async function startAIGuidedTour() {
+            showAINotification('Запускается AI-экскурсия по виртуальному кампусу...');
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Имитация AI-экскурсии
+            const tourMessages = [
+                "AI-гид: Добро пожаловать в главный корпус университета. Здесь находятся административные офисы и исторический зал.",
+                "AI-гид: Переходим в научную библиотеку с фондом более 1 млн книг и электронных ресурсов.",
+                "AI-гид: Сейчас мы в исследовательском центре с современными лабораториями и оборудованием.",
+                "AI-гид: Это студенческий центр с кафе, коворкингом и зонами отдыха.",
+                "AI-гид: Завершаем экскурсию в спортивном комплексе с бассейном и тренажерными залами."
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < tourMessages.length) {
+                    showAINotification(tourMessages[i]);
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    showAINotification('AI-экскурсия завершена. Хотите посетить другие кампусы?');
+                }
+            }, 2000);
+        }
+
+        // AI рекомендация университета
+        async function getAIRecommendation() {
+            const interests = prompt("Введите ваши интересы (например: программирование, медицина, экономика):");
+            if (!interests) return;
+            
+            showAINotification("AI анализирует ваши интересы и подбирает университеты...");
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Простая логика рекомендаций
+            const interestMap = {
+                'программирование': ['Казахский национальный исследовательский технический университет им. К.И. Сатпаева', 'Назарбаев Университет'],
+                'медицина': ['Казахский национальный медицинский университет им. С.Д. Асфендиярова', 'Назарбаев Университет'],
+                'экономика': ['Университет Международного Бизнеса', 'КазНУ им. аль-Фараби'],
+                'педагогика': ['Казахский национальный педагогический университет им. Абая'],
+                'сельское хозяйство': ['Казахский агротехнический университет им. С. Сейфуллина']
+            };
+            
+            let recommended = [];
+            for (const [key, unis] of Object.entries(interestMap)) {
+                if (interests.toLowerCase().includes(key)) {
+                    recommended = [...recommended, ...unis];
+                }
+            }
+            
+            if (recommended.length === 0) {
+                recommended = ['Назарбаев Университет', 'КазНУ им. аль-Фараби', 'ЕНУ им. Гумилева'];
+            }
+            
+            // Убираем дубликаты
+            recommended = [...new Set(recommended)];
+            
+            showAINotification(`AI рекомендует: ${recommended.join(', ')}. Фильтруйте каталог для подробной информации.`);
+        }
+
+        // AI сравнение университетов
+        async function compareUniversitiesWithAI() {
+            const uni1Id = document.getElementById('compareSelect1').value;
+            const uni2Id = document.getElementById('compareSelect2').value;
+            const uni3Id = document.getElementById('compareSelect3').value;
+            
+            const selectedIds = [uni1Id, uni2Id, uni3Id].filter(id => id);
+            
+            if (selectedIds.length < 2) {
+                alert('Пожалуйста, выберите как минимум 2 университета для сравнения.');
+                return;
+            }
+            
+            showAINotification("AI анализирует выбранные университеты...");
+            
+            // Имитация AI анализа
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            const selectedUnis = selectedIds.map(id => 
+                universities.find(uni => uni.id == id)
+            );
+            
+            // Обновляем таблицу сравнения
+            updateComparisonTable(selectedUnis);
+            
+            // AI анализ и рекомендация
+            const bestUni = selectedUnis.reduce((prev, current) => 
+                (prev.rating > current.rating) ? prev : current
+            );
+            
+            showAINotification(`AI анализ: ${bestUni.name} имеет наивысший рейтинг (${bestUni.rating}/10). Рассмотрите его как приоритетный вариант.`);
+        }
+
+        // Обновление таблицы сравнения
+        function updateComparisonTable(selectedUnis) {
+            const tableBody = document.querySelector('#comparisonTable tbody');
+            tableBody.innerHTML = '';
+            
+            // Обновляем заголовки
+            document.getElementById('uni1Header').textContent = selectedUnis[0]?.name || 'Университет 1';
+            document.getElementById('uni2Header').textContent = selectedUnis[1]?.name || 'Университет 2';
+            document.getElementById('uni3Header').textContent = selectedUnis[2]?.name || 'Университет 3';
+            
+            // Данные для сравнения
+            const comparisonData = [
+                { parameter: 'Год основания', key: 'established' },
+                { parameter: 'Количество студентов', key: 'students' },
+                { parameter: 'Рейтинг (AI оценка)', key: 'rating' },
+                { parameter: 'Тип вуза', key: 'type', mapper: (val) => {
+                    const typeMap = { 
+                        national: 'Национальный', 
+                        state: 'Государственный', 
+                        private: 'Частный',
+                        international: 'Международный'
+                    };
+                    return typeMap[val] || val;
+                }},
+                { parameter: 'Местоположение', key: 'location' },
+                { parameter: 'Программы', key: 'programs', mapper: (val) => {
+                    const programMap = {
+                        technical: 'Технические',
+                        medical: 'Медицинские',
+                        humanities: 'Гуманитарные',
+                        economic: 'Экономические',
+                        pedagogical: 'Педагогические',
+                        agricultural: 'Сельскохозяйственные'
+                    };
+                    return val.map(p => programMap[p] || p).join(', ');
+                }},
+                { parameter: 'Стоимость обучения (год, тенге)', key: 'id', mapper: (id) => {
+                    const prices = {1: '5000000', 2: '1500000', 3: '1800000', 4: '2000000', 5: '2500000', 6: '1200000', 7: '3500000', 8: '1400000'};
+                    return prices[id] ? `${parseInt(prices[id]).toLocaleString()} ₸` : '1,500,000 - 3,000,000 ₸';
+                }}
+            ];
+            
+            comparisonData.forEach(data => {
+                const row = document.createElement('tr');
+                const paramCell = document.createElement('td');
+                paramCell.textContent = data.parameter;
+                row.appendChild(paramCell);
+                
+                for (let i = 0; i < 3; i++) {
+                    const cell = document.createElement('td');
+                    if (selectedUnis[i]) {
+                        let value = data.mapper ? data.mapper(selectedUnis[i][data.key] || selectedUnis[i].id) : selectedUnis[i][data.key];
+                        if (data.key === 'students') value = value.toLocaleString();
+                        cell.textContent = value;
+                        
+                        // Подсветка лучшего значения для рейтинга
+                        if (data.key === 'rating' && selectedUnis[i].rating === Math.max(...selectedUnis.map(u => u.rating))) {
+                            cell.style.backgroundColor = '#e8f5e9';
+                            cell.style.fontWeight = 'bold';
+                        }
+                    } else {
+                        cell.textContent = '-';
+                    }
+                    row.appendChild(cell);
+                }
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Уведомления от AI
+        function showAINotification(message, isError = false) {
+            // Создаем уведомление
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${isError ? '#ffebee' : 'linear-gradient(135deg, #6a11cb, #2575fc)'};
+                color: ${isError ? '#c62828' : 'white'};
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1002;
+                max-width: 400px;
+                animation: slideIn 0.3s ease;
+                border-left: 4px solid ${isError ? '#c62828' : '#4CAF50'};
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-${isError ? 'exclamation-triangle' : 'robot'}" style="font-size: 1.2rem;"></i>
+                    <div>${message}</div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+            
+            // Добавляем стили для анимации
+            if (!document.querySelector('#notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(100%); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+
+        // Генерация карточек университетов
+        function generateUniversityCards(filteredUniversities = universities) {
+            const grid = document.querySelector('#universitiesGrid');
+            grid.innerHTML = '';
+            
+            filteredUniversities.forEach(university => {
+                const card = document.createElement('div');
+                card.className = 'university-card';
+                card.innerHTML = `
+                    <div class="university-img">
+                        <i class="fas fa-university"></i>
+                        ${university.aiGenerated ? '<div style="position: absolute; top: 10px; right: 10px; background: var(--ai-color); color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;">AI</div>' : ''}
+                    </div>
+                    <div class="university-info">
+                        <h3>${university.name}</h3>
+                        <div class="university-meta">
+                            <span><i class="fas fa-map-marker-alt"></i> ${university.location}</span>
+                            <span>Рейтинг: ${university.rating}/10</span>
+                        </div>
+                        <p>${university.description}</p>
+                        <div class="university-meta">
+                            <span>Основан: ${university.established}</span>
+                            <span>Студентов: ${university.students.toLocaleString()}</span>
+                        </div>
+                        <div class="compare-checkbox">
+                            <input type="checkbox" id="compare-${university.id}" data-id="${university.id}" data-name="${university.name}">
+                            <label for="compare-${university.id}">Добавить к сравнению</label>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            updateComparisonSelects();
+        }
+
+        // Обновление выпадающих списков для сравнения
+        function updateComparisonSelects() {
+            const select1 = document.getElementById('compareSelect1');
+            const select2 = document.getElementById('compareSelect2');
+            const select3 = document.getElementById('compareSelect3');
+            
+            // Сохраняем текущие значения
+            const currentVal1 = select1.value;
+            const currentVal2 = select2.value;
+            const currentVal3 = select3.value;
+            
+            // Очищаем опции (кроме первой)
+            while(select1.options.length > 1) select1.remove(1);
+            while(select2.options.length > 1) select2.remove(1);
+            while(select3.options.length > 1) select3.remove(1);
+            
+            // Добавляем университеты
+            universities.forEach(uni => {
+                const option = document.createElement('option');
+                option.value = uni.id;
+                option.textContent = uni.name;
+                
+                const option2 = option.cloneNode(true);
+                const option3 = option.cloneNode(true);
+                
+                select1.appendChild(option);
+                select2.appendChild(option2);
+                select3.appendChild(option3);
+            });
+            
+            // Восстанавливаем значения
+            select1.value = currentVal1;
+            select2.value = currentVal2;
+            select3.value = currentVal3;
+        }
+
+        // Фильтрация университетов
+        function filterUniversities() {
+            const region = document.getElementById('regionFilter').value;
+            const type = document.getElementById('typeFilter').value;
+            const program = document.getElementById('programFilter').value;
+            const search = document.getElementById('searchFilter').value.toLowerCase();
+            
+            const filtered = universities.filter(uni => {
+                // Фильтр по региону
+                if (region !== 'all') {
+                    const regionMap = {
+                        'nur-sultan': 'Нур-Султан',
+                        'almaty': 'Алматы',
+                        'shymkent': 'Шымкент',
+                        'karaganda': 'Караганда'
+                    };
+                    if (uni.location !== regionMap[region]) return false;
+                }
+                
+                // Фильтр по типу
+                if (type !== 'all' && uni.type !== type) return false;
+                
+                // Фильтр по программе
+                if (program !== 'all' && !uni.programs.includes(program)) return false;
+                
+                // Фильтр по поиску
+                if (search && !uni.name.toLowerCase().includes(search)) return false;
+                
+                return true;
+            });
+            
+            generateUniversityCards(filtered);
+        }
+
+        // AI чат
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Добавляем сообщение пользователя
+            const messagesContainer = document.getElementById('chatMessages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user';
+            userMessage.textContent = message;
+            messagesContainer.appendChild(userMessage);
+            
+            // Очищаем поле ввода
+            input.value = '';
+            
+            // Прокручиваем вниз
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Получаем ответ от AI
+            const aiResponse = await handleAIChat(message);
+            
+            // Добавляем ответ AI
+            const aiMessage = document.createElement('div');
+            aiMessage.className = 'message ai';
+            aiMessage.innerHTML = `<strong>AI помощник:</strong> ${aiResponse}`;
+            messagesContainer.appendChild(aiMessage);
+            
+            // Прокручиваем вниз
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Переключение AI чата
+        function toggleAIChat() {
+            const panel = document.getElementById('aiChatPanel');
+            panel.classList.toggle('active');
+            
+            if (panel.classList.contains('active')) {
+                document.getElementById('chatInput').focus();
+            }
+        }
+
+        // Функции доступности
+        function initAccessibility() {
+            const panel = document.getElementById('accessibilityPanel');
+            const toggleBtn = document.getElementById('accessibilityToggle');
+            const highContrastBtn = document.getElementById('highContrastToggle');
+            const textIncreaseBtn = document.getElementById('textSizeIncrease');
+            const textDecreaseBtn = document.getElementById('textSizeDecrease');
+            const readerModeBtn = document.getElementById('readerModeToggle');
+            const speakContentBtn = document.getElementById('speakContent');
+            const resetBtn = document.getElementById('resetAccessibility');
+            
+            // Переключение панели доступности
+            toggleBtn.addEventListener('click', () => {
+                panel.classList.toggle('active');
+            });
+            
+            // Высокая контрастность
+            highContrastBtn.addEventListener('click', () => {
+                document.body.classList.toggle('high-contrast');
+                document.querySelectorAll('header, footer, section').forEach(el => {
+                    el.classList.toggle('high-contrast');
+                });
+                document.querySelectorAll('h1, h2, h3, p, span, a, li').forEach(el => {
+                    el.classList.toggle('high-contrast-text');
+                });
+            });
+            
+            // Увеличение текста
+            textIncreaseBtn.addEventListener('click', () => {
+                document.body.classList.remove('text-large', 'text-xlarge');
+                if (document.body.classList.contains('text-large')) {
+                    document.body.classList.add('text-xlarge');
+                } else {
+                    document.body.classList.add('text-large');
+                }
+            });
+            
+            // Уменьшение текста
+            textDecreaseBtn.addEventListener('click', () => {
+                if (document.body.classList.contains('text-xlarge')) {
+                    document.body.classList.remove('text-xlarge');
+                    document.body.classList.add('text-large');
+                } else {
+                    document.body.classList.remove('text-large');
+                }
+            });
+            
+            // Режим для чтения
+            readerModeBtn.addEventListener('click', () => {
+                document.body.classList.toggle('reader-mode');
+            });
+            
+            // Озвучивание текста
+            speakContentBtn.addEventListener('click', () => {
+                if ('speechSynthesis' in window) {
+                    const mainContent = document.querySelector('main').textContent;
+                    const utterance = new SpeechSynthesisUtterance(mainContent.substring(0, 1000));
+                    utterance.lang = 'ru-RU';
+                    speechSynthesis.speak(utterance);
+                } else {
+                    alert('Ваш браузер не поддерживает озвучивание текста.');
+                }
+            });
+            
+            // Сброс настроек
+            resetBtn.addEventListener('click', () => {
+                document.body.className = '';
+                document.querySelectorAll('*').forEach(el => {
+                    el.classList.remove('high-contrast', 'high-contrast-text', 'text-large', 'text-xlarge', 'reader-mode');
+                });
+                panel.classList.remove('active');
+            });
+            
+            // Закрытие панели при клике вне её
+            document.addEventListener('click', (e) => {
+                if (!panel.contains(e.target) && !toggleBtn.contains(e.target)) {
+                    panel.classList.remove('active');
+                }
+            });
+        }
+
+        // Дополнительные AI функции
+        function generateAIReport() {
+            showAINotification("AI генерирует отчет по тенденциям образования в Казахстане...");
+            
+            setTimeout(() => {
+                const report = `
+                    <h3>AI Отчет по образовательным тенденциям 2024</h3>
+                    <p><strong>Топ-5 растущих специальностей:</strong><br>
+                    1. Data Science & AI<br>
+                    2. Кибербезопасность<br>
+                    3. Биотехнологии<br>
+                    4. Green Energy<br>
+                    5. Цифровая медицина</p>
+                    
+                    <p><strong>Средняя стоимость обучения:</strong><br>
+                    • Национальные вузы: 1.5-2.5 млн ₸/год<br>
+                    • Государственные: 800 тыс.-1.5 млн ₸/год<br>
+                    • Частные: 2-4 млн ₸/год</p>
+                    
+                    <p><strong>Тенденции:</strong> Рост онлайн-образования на 40%, увеличение международных программ на 25%.</p>
+                `;
+                
+                alert(report.replace(/<[^>]*>/g, ''));
+            }, 2000);
+        }
+
+        function askAIMatching() {
+            const profile = prompt("Опишите ваш профиль (интересы, оценки, бюджет, регион):");
+            if (!profile) return;
+            
+            showAINotification("AI анализирует ваш профиль и подбирает оптимальные варианты...");
+            
+            setTimeout(() => {
+                const recommendations = [
+                    "1. Для технического профиля: КазНТУ им. Сатпаева, Satbayev University",
+                    "2. Для медицинского профиля: КазНМУ им. Асфендиярова, Медицинский университет Астана",
+                    "3. Для экономического профиля: Университет Нархоз, КазЭУ им. Т. Рыскулова",
+                    "4. Для гуманитарного профиля: КазНУ им. аль-Фараби, ЕНУ им. Гумилева"
+                ];
+                
+                alert("AI рекомендации на основе вашего профиля:\n\n" + recommendations.join("\n"));
+            }, 2500);
+        }
+
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            // Генерация карточек университетов
+            generateUniversityCards();
+            
+            // Инициализация функций доступности
+            initAccessibility();
+            
+            // Настройка фильтров
+            document.getElementById('regionFilter').addEventListener('change', filterUniversities);
+            document.getElementById('typeFilter').addEventListener('change', filterUniversities);
+            document.getElementById('programFilter').addEventListener('change', filterUniversities);
+            document.getElementById('searchFilter').addEventListener('input', filterUniversities);
+            document.getElementById('searchInput').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                const filtered = universities.filter(uni => 
+                    uni.name.toLowerCase().includes(searchTerm) || 
+                    uni.description.toLowerCase().includes(searchTerm)
+                );
+                generateUniversityCards(filtered);
+            });
+            
+            // AI генерация данных
+            document.getElementById('aiGenerateData').addEventListener('click', generateUniversityDataWithAI);
+            
+            // AI рекомендация
+            document.getElementById('aiRecommendBtn').addEventListener('click', getAIRecommendation);
+            
+            // AI сравнение
+            document.getElementById('aiCompareButton').addEventListener('click', compareUniversitiesWithAI);
+            
+            // AI чат
+            document.getElementById('aiChatToggle').addEventListener('click', toggleAIChat);
+            document.getElementById('closeChat').addEventListener('click', () => {
+                document.getElementById('aiChatPanel').classList.remove('active');
+            });
+            document.getElementById('sendMessage').addEventListener('click', sendChatMessage);
+            document.getElementById('chatInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+            
+            // Мобильное меню
+            document.getElementById('mobileMenuToggle').addEventListener('click', () => {
+                document.getElementById('navMenu').classList.toggle('active');
+            });
+            
+            // Плавная прокрутка для навигации
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const targetId = this.getAttribute('href');
+                    if (targetId === '#') return;
+                    
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 80,
+                            behavior: 'smooth'
+                        });
+                        
+                        // Закрытие мобильного меню
+                        document.getElementById('navMenu').classList.remove('active');
+                    }
+                });
+            });
+            
+            // Активное состояние навигации при прокрутке
+            window.addEventListener('scroll', () => {
+                const sections = document.querySelectorAll('section[id]');
+                const navLinks = document.querySelectorAll('.nav-menu a');
+                
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+                    if (scrollY >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+                
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${current}`) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            // Автоматическая AI генерация при первом посещении
+            setTimeout(() => {
+                if (universities.length < 5) {
+                    showAINotification('AI помощник готов заполнить каталог актуальными данными. Нажмите кнопку "Сгенерировать данные с помощью AI"!');
+                }
+            }, 3000);
+        });
+    </script>
+</body>
+</html>
